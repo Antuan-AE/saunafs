@@ -5,6 +5,8 @@
 #include "chunkserver-common/indexed_resource_pool.h"
 #include "chunkserver-common/open_chunk.h"
 
+#define LOG_AVG_TILL_END_OF_SCOPE0(operation) (void)0
+
 inline IndexedResourcePool<OpenChunk> gOpenChunks;
 
 /// Protects access to the list of chunks of every Disk. This list contains the
@@ -32,3 +34,10 @@ inline std::mutex gDisksMutex;
 
 /// Container to reuse free condition variables (guarded by `gChunksMapMutex`)
 inline std::vector<std::unique_ptr<CondVarWithWaitCount>> gFreeCondVars;
+
+/// Active Disks scans in progress.
+/// Note: theoretically it would return a false positive if scans haven't
+/// started yet, but it's a _very_ unlikely situation.
+static std::atomic_int gScansInProgress(0);
+
+static std::atomic<bool> gPerformFsync;
